@@ -692,25 +692,39 @@
             renderCanvas();
         }
         
-        async function init() {
-            await openDB();
-            customImages = await loadAllImagesFromDB();
-            await preloadImages();
-            fossils = initFossils();
-            collectedCount = 0;
-            gameActive = true;
-            digHoles = [];
-            dugShadows = [];
-            initDecorations();
-            renderCanvas();
-            updateProgressUI();
-            canvas.addEventListener('click', handleClick);
-            canvas.addEventListener('touchstart', (e) => { e.preventDefault(); handleClick(e); });
-            resetBtn.addEventListener('click', resetGame);
-            const style = document.createElement('style');
-            style.textContent = `@keyframes dustFly { 0% { transform: scale(0); opacity: 0.8; } 100% { transform: scale(1.5) translate(10px,-15px); opacity: 0; } }`;
-            document.head.appendChild(style);
-        }
+async function init() {
+    // 完全跳过 IndexedDB，避免兼容性问题
+    // await openDB();
+    // customImages = await loadAllImagesFromDB();
+    
+    // 直接使用 Emoji 模式，不需要图片
+    for (let type of FOSSIL_TYPES) {
+        loadedImages[type.id] = null;
+    }
+    
+    fossils = initFossils();
+    collectedCount = 0;
+    gameActive = true;
+    digHoles = [];
+    dugShadows = [];
+    initDecorations();
+    renderCanvas();
+    updateProgressUI();
+    
+    // 简化事件绑定
+    canvas.removeEventListener('click', handleClick);
+    canvas.removeEventListener('touchstart', handleClick);
+    canvas.addEventListener('click', handleClick);
+    canvas.addEventListener('touchstart', handleClick, { passive: false });
+    
+    resetBtn.addEventListener('click', resetGame);
+    
+    const style = document.createElement('style');
+    style.textContent = `@keyframes dustFly { 0% { transform: scale(0); opacity: 0.8; } 100% { transform: scale(1.5) translate(10px,-15px); opacity: 0; } }`;
+    document.head.appendChild(style);
+    
+    gameMessageDiv.innerHTML = '✅ 点击土层开始挖掘！';
+}
         
         canvas.width = CANVAS_W;
         canvas.height = CANVAS_H;
