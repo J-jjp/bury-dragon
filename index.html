@@ -263,14 +263,14 @@
 <script>
     (function(){
         const FOSSIL_TYPES = [
-            { id: "head", name: "头骨", displayName: "头骨", defaultEmoji: "💀", imageUrl: "https://raw.githubusercontent.com/J-jjp/bury-dragon/main/dragon/images/head.png" },
-            { id: "neck", name: "颈椎", displayName: "颈椎", defaultEmoji: "🦴", imageUrl: "https://raw.githubusercontent.com/J-jjp/bury-dragon/main/dragon/images/neck.png" },
-            { id: "belly", name: "腹部", displayName: "腹部骨骼", defaultEmoji: "🦴", imageUrl: "https://raw.githubusercontent.com/J-jjp/bury-dragon/main/dragon/images/belly.png" },
-            { id: "tail", name: "尾巴", displayName: "尾椎骨", defaultEmoji: "🐍", imageUrl: "https://raw.githubusercontent.com/J-jjp/bury-dragon/main/dragon/images/tail.png" },
-            { id: "front_leg_left", name: "左前腿", displayName: "左前腿骨", defaultEmoji: "🦴", imageUrl: "https://raw.githubusercontent.com/J-jjp/bury-dragon/main/dragon/images/front_leg_left.png" },
-            { id: "front_leg_right", name: "右前腿", displayName: "右前腿骨", defaultEmoji: "🦴", imageUrl: "https://raw.githubusercontent.com/J-jjp/bury-dragon/main/dragon/images/front_leg_right.png" },
-            { id: "hind_leg_left", name: "左后腿", displayName: "左后腿骨", defaultEmoji: "🦵", imageUrl: "https://raw.githubusercontent.com/J-jjp/bury-dragon/main/dragon/images/hind_leg_left.png" },
-            { id: "hind_leg_right", name: "右后腿", displayName: "右后腿骨", defaultEmoji: "🦵", imageUrl: "https://raw.githubusercontent.com/J-jjp/bury-dragon/main/dragon/images/hind_leg_right.png" }
+            { id: "head", name: "头骨", displayName: "头骨", defaultEmoji: "💀" , imageUrl: "../images/head.png"},
+            { id: "neck", name: "颈椎", displayName: "颈椎", defaultEmoji: "🦴" , imageUrl: "../images/neck.png" },
+            { id: "belly", name: "腹部", displayName: "腹部骨骼", defaultEmoji: "🦴" , imageUrl: "../images/belly.png" },
+            { id: "tail", name: "尾巴", displayName: "尾椎骨", defaultEmoji: "🐍" ,  imageUrl: "../images/tail.png" },
+            { id: "front_leg_left", name: "左前腿", displayName: "左前腿骨", defaultEmoji: "🦴"  , imageUrl: "../images/front_leg_left.png"},
+            { id: "front_leg_right", name: "右前腿", displayName: "右前腿骨", defaultEmoji: "🦴" , imageUrl: "../images/front_leg_right.png" },
+            { id: "hind_leg_left", name: "左后腿", displayName: "左后腿骨", defaultEmoji: "🦵" , imageUrl: "../images/hind_leg_left.png" },
+            { id: "hind_leg_right", name: "右后腿", displayName: "右后腿骨", defaultEmoji: "🦵"  , imageUrl: "../images/hind_leg_right.png"}
         ];
         const TOTAL_FOSSILS = 8;
         const CANVAS_W = 700, CANVAS_H = 450;
@@ -350,38 +350,19 @@
             });
         }
         
-    async function preloadImages() {
-        gameMessageDiv.innerHTML = '⏳ 正在加载图片资源...';
-        
-        for (let type of FOSSIL_TYPES) {
-            const url = type.imageUrl;
-            if (url) {
-                const img = new Image();
-                // 设置超时，5秒后放弃
-                const timeoutPromise = new Promise(resolve => setTimeout(() => {
-                    console.warn(`⚠️ 加载超时: ${type.id}`);
-                    resolve(null);
-                }, 5000));
-                
-                const loadPromise = new Promise(resolve => {
-                    img.onload = () => resolve(img);
-                    img.onerror = () => {
-                        console.warn(`❌ 加载失败: ${type.id}`);
-                        resolve(null);
-                    };
+        async function preloadImages() {
+            for (let type of FOSSIL_TYPES) {
+                const url = customImages[type.id] || type.imageUrl;
+                if (url) {
+                    const img = new Image();
                     img.src = url;
-                });
-                
-                const result = await Promise.race([loadPromise, timeoutPromise]);
-                loadedImages[type.id] = result;
-            } else {
-                loadedImages[type.id] = null;
+                    await new Promise(r => { img.onload = r; img.onerror = r; });
+                    loadedImages[type.id] = img;
+                } else {
+                    loadedImages[type.id] = null;
+                }
             }
         }
-        
-        gameMessageDiv.innerHTML = '💡 点击土层挖掘';
-        renderCanvas();
-    }
         
         // 游戏绘制（石头、树枝、树叶、坑洞、碎片影子）
         function initDecorations() {
@@ -692,39 +673,25 @@
             renderCanvas();
         }
         
-async function init() {
-    // 完全跳过 IndexedDB，避免兼容性问题
-    // await openDB();
-    // customImages = await loadAllImagesFromDB();
-    
-    // 直接使用 Emoji 模式，不需要图片
-    for (let type of FOSSIL_TYPES) {
-        loadedImages[type.id] = null;
-    }
-    
-    fossils = initFossils();
-    collectedCount = 0;
-    gameActive = true;
-    digHoles = [];
-    dugShadows = [];
-    initDecorations();
-    renderCanvas();
-    updateProgressUI();
-    
-    // 简化事件绑定
-    canvas.removeEventListener('click', handleClick);
-    canvas.removeEventListener('touchstart', handleClick);
-    canvas.addEventListener('click', handleClick);
-    canvas.addEventListener('touchstart', handleClick, { passive: false });
-    
-    resetBtn.addEventListener('click', resetGame);
-    
-    const style = document.createElement('style');
-    style.textContent = `@keyframes dustFly { 0% { transform: scale(0); opacity: 0.8; } 100% { transform: scale(1.5) translate(10px,-15px); opacity: 0; } }`;
-    document.head.appendChild(style);
-    
-    gameMessageDiv.innerHTML = '✅ 点击土层开始挖掘！';
-}
+        async function init() {
+            await openDB();
+            customImages = await loadAllImagesFromDB();
+            await preloadImages();
+            fossils = initFossils();
+            collectedCount = 0;
+            gameActive = true;
+            digHoles = [];
+            dugShadows = [];
+            initDecorations();
+            renderCanvas();
+            updateProgressUI();
+            canvas.addEventListener('click', handleClick);
+            canvas.addEventListener('touchstart', (e) => { e.preventDefault(); handleClick(e); });
+            resetBtn.addEventListener('click', resetGame);
+            const style = document.createElement('style');
+            style.textContent = `@keyframes dustFly { 0% { transform: scale(0); opacity: 0.8; } 100% { transform: scale(1.5) translate(10px,-15px); opacity: 0; } }`;
+            document.head.appendChild(style);
+        }
         
         canvas.width = CANVAS_W;
         canvas.height = CANVAS_H;
