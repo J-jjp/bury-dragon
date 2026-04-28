@@ -350,19 +350,38 @@
             });
         }
         
-        async function preloadImages() {
-            for (let type of FOSSIL_TYPES) {
-                const url = customImages[type.id] || type.imageUrl;
-                if (url) {
-                    const img = new Image();
+    async function preloadImages() {
+        gameMessageDiv.innerHTML = '⏳ 正在加载图片资源...';
+        
+        for (let type of FOSSIL_TYPES) {
+            const url = type.imageUrl;
+            if (url) {
+                const img = new Image();
+                // 设置超时，5秒后放弃
+                const timeoutPromise = new Promise(resolve => setTimeout(() => {
+                    console.warn(`⚠️ 加载超时: ${type.id}`);
+                    resolve(null);
+                }, 5000));
+                
+                const loadPromise = new Promise(resolve => {
+                    img.onload = () => resolve(img);
+                    img.onerror = () => {
+                        console.warn(`❌ 加载失败: ${type.id}`);
+                        resolve(null);
+                    };
                     img.src = url;
-                    await new Promise(r => { img.onload = r; img.onerror = r; });
-                    loadedImages[type.id] = img;
-                } else {
-                    loadedImages[type.id] = null;
-                }
+                });
+                
+                const result = await Promise.race([loadPromise, timeoutPromise]);
+                loadedImages[type.id] = result;
+            } else {
+                loadedImages[type.id] = null;
             }
         }
+        
+        gameMessageDiv.innerHTML = '💡 点击土层挖掘';
+        renderCanvas();
+    }
         
         // 游戏绘制（石头、树枝、树叶、坑洞、碎片影子）
         function initDecorations() {
