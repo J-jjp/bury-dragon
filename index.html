@@ -350,19 +350,38 @@
             });
         }
         
-        async function preloadImages() {
-            for (let type of FOSSIL_TYPES) {
-                const url = customImages[type.id] || type.imageUrl;
-                if (url) {
-                    const img = new Image();
-                    img.src = url;
-                    await new Promise(r => { img.onload = r; img.onerror = r; });
-                    loadedImages[type.id] = img;
-                } else {
-                    loadedImages[type.id] = null;
-                }
-            }
+async function preloadImages() {
+    // 获取当前页面的基础路径
+    const basePath = window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/') + 1);
+    console.log('基础路径:', basePath);
+    
+    for (let type of FOSSIL_TYPES) {
+        let url = type.imageUrl;
+        if (url && !url.startsWith('http')) {
+            // 如果是相对路径，加上基础路径
+            url = basePath + url;
         }
+        if (url) {
+            console.log(`加载图片 ${type.id}: ${url}`);
+            const img = new Image();
+            img.src = url;
+            await new Promise(r => { 
+                img.onload = () => {
+                    console.log(`✅ 成功: ${type.id}`);
+                    r();
+                };
+                img.onerror = () => {
+                    console.log(`❌ 失败: ${type.id} -> ${url}`);
+                    r();
+                };
+            });
+            loadedImages[type.id] = img;
+        } else {
+            loadedImages[type.id] = null;
+        }
+    }
+    renderCanvas();
+}
         
         // 游戏绘制（石头、树枝、树叶、坑洞、碎片影子）
         function initDecorations() {
