@@ -352,13 +352,18 @@
         
 async function preloadImages() {
     // 获取当前页面的基础路径
-    const basePath = window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/') + 1);
+    let basePath = window.location.pathname;
+    // 如果路径以 / 结尾，直接使用；否则取到最后一个 /
+    if (!basePath.endsWith('/')) {
+        basePath = basePath.substring(0, basePath.lastIndexOf('/') + 1);
+    }
     console.log('基础路径:', basePath);
     
     for (let type of FOSSIL_TYPES) {
         let url = type.imageUrl;
-        if (url && !url.startsWith('http')) {
-            // 如果是相对路径，加上基础路径
+        if (url && !url.startsWith('http') && !url.startsWith('https')) {
+            // 如果是相对路径，加上基础路径，并去掉开头的 ./
+            url = url.replace(/^\.\//, '');
             url = basePath + url;
         }
         if (url) {
@@ -372,7 +377,7 @@ async function preloadImages() {
                 };
                 img.onerror = () => {
                     console.log(`❌ 失败: ${type.id} -> ${url}`);
-                    r();
+                    r();  // 失败也继续，不阻塞
                 };
             });
             loadedImages[type.id] = img;
@@ -380,9 +385,12 @@ async function preloadImages() {
             loadedImages[type.id] = null;
         }
     }
-    renderCanvas();
+    console.log("图片加载完成，准备渲染");
+    // 确保游戏初始化完成后再渲染
+    if (typeof renderCanvas === 'function') {
+        renderCanvas();
+    }
 }
-        
         // 游戏绘制（石头、树枝、树叶、坑洞、碎片影子）
         function initDecorations() {
             decorations = [];
